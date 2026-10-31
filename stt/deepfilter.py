@@ -5,6 +5,21 @@ import onnxruntime as ort
 import sounddevice as sd
 import zmq
 
+def find_mic_index():
+    """Busca dinamicamente o índice do microfone USB para evitar erros se a numeração mudar."""
+    try:
+        devices = sd.query_devices()
+        for idx, dev in enumerate(devices):
+            dev_name = dev['name'].lower()
+            if ('usb' in dev_name or 'composite' in dev_name) and dev['max_input_channels'] > 0:
+                print(f"[ÁUDIO] Microfone USB detectado: '{dev['name']}' (Índice {idx})", flush=True)
+                return idx
+    except Exception as e:
+        print(f"[AVISO ÁUDIO] Erro ao listar dispositivos: {e}", flush=True)
+    
+    print("[ÁUDIO] Microfone USB específico não listado pelo nome. Usando o dispositivo padrão.", flush=True)
+    return None
+
 context_a = zmq.Context()
 sender_a = context_a.socket(zmq.PUSH)
 sender_a.connect("ipc:///tmp/audio_filtrado.ipc")
@@ -21,7 +36,11 @@ FRAME_DURATION = 0.032  # 32ms = 512 amostras
 FRAME_SIZE = int(SAMPLE_RATE * FRAME_DURATION)  # 512
 CONTEXT_SIZE = 64  # Buffer de contexto exigido pelo Silero VAD v5 ONNX
 
-VAD_MODEL_PATH = '/home/joao/oficinas2/Spell_nodes/stt/silero_vad.onnx'
+VAD_MODEL_PATH = '/home/joao/Documents/oficinas/Spell-Board-Software/stt/silero_vad.onnx'
+if not os.path.exists(VAD_MODEL_PATH):
+    # Se o caminho relativo for diferente, ajusta dinamicamente
+    VAD_MODEL_PATH = os.path.join(os.path.dirname(__file__), 'silero_vad.onnx')
+
 if not os.path.exists(VAD_MODEL_PATH):
     print(f"[ERRO ÁUDIO] Modelo VAD não encontrado em: {VAD_MODEL_PATH}", flush=True)
     exit(1)
@@ -66,14 +85,20 @@ is_speaking = False
 silence_counter = 0
 MAX_SILENCE_CHUNKS = 25  # ~800ms de silêncio encerra a frase
 
+mic_idx = find_mic_index()
 print("[ÁUDIO] Captura iniciada em 16 kHz (ONNX + Context Buffer 64)...", flush=True)
 
-with sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype='float32', blocksize=FRAME_SIZE) as stream:
+with sd.InputStream(
+    device=mic_idx,
+    samplerate=SAMPLE_RATE,
+    channels=1,
+    dtype='float32',
+    blocksize=FRAME_SIZE
+) as stream:
     last_debug_time = time.time()
     
     while True:
         try:
-            # Drena e trata mensagens da State Machine sanitizando o sufixo FEN
             while True:
                 try:
                     raw_turn = subscriber_machine.recv_string(flags=zmq.NOBLOCK)
