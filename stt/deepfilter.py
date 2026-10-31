@@ -36,13 +36,13 @@ FRAME_DURATION = 0.032  # 32ms = 512 amostras
 FRAME_SIZE = int(SAMPLE_RATE * FRAME_DURATION)  # 512
 CONTEXT_SIZE = 64  # Buffer de contexto exigido pelo Silero VAD v5 ONNX
 
-VAD_MODEL_PATH = '/home/joao/Documents/oficinas/Spell-Board-Software/stt/silero_vad.onnx'
-if not os.path.exists(VAD_MODEL_PATH):
-    # Se o caminho relativo for diferente, ajusta dinamicamente
-    VAD_MODEL_PATH = os.path.join(os.path.dirname(__file__), 'silero_vad.onnx')
+# Resolve o caminho do silero_vad.onnx dinamicamente na mesma pasta deste script
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+VAD_MODEL_PATH = os.path.join(SCRIPT_DIR, 'silero_vad.onnx')
 
 if not os.path.exists(VAD_MODEL_PATH):
     print(f"[ERRO ÁUDIO] Modelo VAD não encontrado em: {VAD_MODEL_PATH}", flush=True)
+    print("Execute: wget https://github.com/snakers4/silero-vad/raw/master/src/silero_vad/data/silero_vad.onnx na pasta stt/", flush=True)
     exit(1)
 
 vad_session = ort.InferenceSession(VAD_MODEL_PATH)
