@@ -25,9 +25,12 @@ poller = zmq.Poller()
 poller.register(subscriber_machine, zmq.POLLIN)
 poller.register(receiver_a, zmq.POLLIN)
 
-MODEL_PATH = (
-    '/home/joao/oficinas2/Spell_nodes/stt/whisper.cpp/models/ggml-base.en.bin'
-)
+# Caminho dinâmico: procura o modelo na mesma pasta do script ou dentro de 'models/'
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(SCRIPT_DIR, "ggml-base.en.bin")
+
+if not os.path.exists(MODEL_PATH):
+    MODEL_PATH = os.path.join(SCRIPT_DIR, "models", "ggml-base.en.bin")
 
 PHONETIC_FIXES = {
     r'\bnight\b': 'knight',
@@ -71,9 +74,10 @@ def clean_transcription(text):
 def load_model_whisper(model_path):
     if not os.path.exists(model_path):
         print(f"[ERRO WHISPER] Modelo não encontrado em: {model_path}", flush=True)
+        print("Certifique-se de que o 'ggml-base.en.bin' está salvo em stt/ ou stt/models/", flush=True)
         return None
 
-    print("[WHISPER] Carregando modelo base do Whisper...", flush=True)
+    print(f"[WHISPER] Carregando modelo Whisper ({model_path})...", flush=True)
     try:
         model = Model(model_path, n_threads=4, print_realtime=False)
         print("[WHISPER] STT pronto com resgate de coordenadas!", flush=True)
