@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# ZeroMQ IPC Sockets (Essencial para não travar a comunicação)
+*.ipc
+
+# Ferramentas de terceiros clonadas
+stt/whisper.cpp/
+
+# Modelos pesados de IA (O GitHub bloqueia ficheiros > 100MB)
+*.bin
+*.onnx
+*.pt
+
+# SO
+.DS_Store
+Thumbs.db
