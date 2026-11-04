@@ -5,14 +5,14 @@ import sys
 import time
 from pathlib import Path
 
-# Diretório raiz (Spell_nodes)
+# path pro diretório raíz dos nós
 BASE_DIR = Path(__file__).parent.resolve()
 
-# Pasta para armazenar os logs de cada nó
+# pasta para armazenar os logs de cada nó, muito util pro debug, usando cat ou grep
 LOGS_DIR = Path("/tmp/chess_logs")
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Mapeamento dos nós agrupados pelas suas pastas
+# mapeamento dos nós agrupados pelas suas pastas
 NODES = [
     ("Orquestrador (State Machine)", "control/state_machine.py"),
     ("Verificador de Regras", "chess/verifier.py"),
@@ -22,12 +22,12 @@ NODES = [
     ("Nó Áudio / DeepFilter", "stt/deepfilter.py"),
 ]
 
-# Nó de interface visual que roda no terminal ativo
+# nó de interface visual que roda no terminal ativo, temporário só pra debug
 VISUALIZER_NODE = ("Visualizador de Tabuleiro", "chess/board_visualizer_node.py")
 
-processes = []
+processes = []#lista para guardar todas as referencias dos processos que foram lançados em segundo plano
 
-
+#função que finaliza os processos criados e fecha os logs
 def stop_all_nodes(sig, frame):
     print("\n\n[LAUNCHER] Encerrando todos os nós do ecossistema...")
     for name, proc, log_file in reversed(processes):
@@ -39,56 +39,63 @@ def stop_all_nodes(sig, frame):
     sys.exit(0)
 
 
-# Registra os sinais de interrupção (Ctrl+C ou finalização do sistema)
+# registra os sinais de interrupção tipo Ctrl+C
 signal.signal(signal.SIGINT, stop_all_nodes)
 signal.signal(signal.SIGTERM, stop_all_nodes)
 
 
 def main():
+    #printa aviso de funcionamento
     print("=" * 65)
     print("   ECOSSISTEMA DE XADREZ AUTÔNOMO - INICIALIZANDO NÓS   ")
     print(f"   Diretório Raiz: {BASE_DIR}")
     print("=" * 65)
 
-    # 1. Inicia os nós em background
+    # inicia os nós, usando os paths encontrados anteriormente
     for name, relative_script_path in NODES:
         script_full_path = BASE_DIR / relative_script_path
 
-        # Caso o arquivo tenha outro nome na pasta, evita quebrar o script sem aviso
+        # checa se  arquivo existe no path passado
         if not script_full_path.exists():
             print(
                 f"[ERRO LAUNCHER] Arquivo não encontrado: {relative_script_path}"
             )
             continue
-
+        
+        #salva os logs temporários no caminho indicado
         log_filename = (
             f"{Path(relative_script_path).stem}.log"  # ex: state_machine.log
         )
+        #cria arquivo texto para botar os logs
         log_file = open(LOGS_DIR / log_filename, "w")
 
+        #printa o nó sendo iniciado e o log dele
         print(
             f"[LAUNCHER] Subindo {name:<30} -> Logs: /tmp/chess_logs/{log_filename}"
         )
 
-        # Executa no ambiente Python ativo usando a raiz como diretório de trabalho (cwd)
+        # executa no ambiente python ativo usando a raiz como diretório de trabalho --> talvez mudar dps pra não precisar de venv
         proc = subprocess.Popen(
             [sys.executable, "-u", str(script_full_path)],
             stdout=log_file,
             stderr=log_file,
             cwd=str(BASE_DIR),
         )
+
+        #adiciona a lista de processos, o nome, objeto(proc) do próprio SO e arquivo log respectivos
         processes.append((name, proc, log_file))
 
-        # Pausa de 1s para o bind/connect dos sockets IPC não colidirem
+        # pausa de 1s para o bind/connect dos sockets IPC não colidirem
         time.sleep(1)
 
+    #quando acaba de inicializar os nós imprime
     print("\n" + "=" * 65)
     print(" [SISTEMA ATIVO] Todos os nós de fundo estão operando.")
     print(" Iniciando interface visual do tabuleiro no terminal...")
     print("=" * 65 + "\n")
     time.sleep(1)
 
-    # 2. Executa a interface do tabuleiro no terminal ativo
+    #executa a interface do tabuleiro no terminal ativo --> temporário só pra teste mesmo
     visualizer_full_path = BASE_DIR / VISUALIZER_NODE[1]
     if visualizer_full_path.exists():
         try:

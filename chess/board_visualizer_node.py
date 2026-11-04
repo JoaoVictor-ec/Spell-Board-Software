@@ -1,3 +1,5 @@
+#ESSE CÓDIGO FOI CRIADO EXCLUSIVAMENTE PARA TESTES MESMO SENDO LEGALZINHO NÃO ENTRA NO PROJETO FINAL
+
 import os
 import sys
 import zmq
@@ -13,6 +15,7 @@ COLOR_WHITE_PIECE = "\033[96m"  # Ciano brilhante (Brancas - Jogador)
 COLOR_BLACK_PIECE = "\033[91m"  # Vermelho (Pretas - Stockfish)
 COLOR_RESET = "\033[0m"
 
+#desenho das peças e códigos correspondentes
 UNICODE_PIECES = {
     'R': f'{COLOR_WHITE_PIECE}♖{COLOR_RESET}',
     'N': f'{COLOR_WHITE_PIECE}♘{COLOR_RESET}',
@@ -29,6 +32,7 @@ UNICODE_PIECES = {
     '.': '⭘',
 }
 
+#inicia o tabuleiro
 INITIAL_BOARD = """r n b q k b n r
 p p p p p p p p
 . . . . . . . .
@@ -38,11 +42,11 @@ p p p p p p p p
 P P P P P P P P
 R N B Q K B N R"""
 
-
+# carrega corzinha nas peças pra não ficar feio no terminal
 def render_colored_board(board_str):
     lines = board_str.strip().split('\n')
     rendered_lines = []
-
+    #percorre as linhas e colunas pintando as peças e carregando na lista de já coloridas
     for line in lines:
         rendered_row = []
         for char in line.split():
@@ -51,7 +55,7 @@ def render_colored_board(board_str):
 
     return "\n -----------------\n".join(rendered_lines)
 
-
+# limpa o terminal e desenha na tela o tabuleiro, e mostra ultima jogada
 def draw_screen(last_move, current_turn, raw_board):
     os.system('clear' if os.name == 'posix' else 'cls')
     print("====================================")
@@ -75,24 +79,25 @@ def draw_screen(last_move, current_turn, raw_board):
     print(f"  Turno atual: {current_turn}\n", flush=True)
 
 
-print("[VISUALIZADOR] Nó visualizador de tabuleiro iniciado.", flush=True)
+print("[VISUALIZADOR] Nó visualizador de tabuleiro iniciado.", flush=True)# mensagem pro launch
 
-# Desenha o tabuleiro inicial IMEDIATAMENTE ao abrir o script
+# desenha o tabuleiro inicial assim que rodar o script
 draw_screen("Início da Partida", "BRANCAS (Jogador)", INITIAL_BOARD)
 
-# Loop continuo de atualização via ZMQ
+# loop continuo de atualização via ZMQ
 while True:
     try:
-        msg = sub_verified.recv_string()
-        parts = msg.split('|')
+        msg = sub_verified.recv_string()#recebe do verifier a ultima jogada, o turno atual e o tabuleiro como está
+        parts = msg.split('|')#separa a mensagem recebido usando os |
 
+        #checa se chegou tudo que precisa e desenha no terminal
         if len(parts) >= 3:
             last_move = parts[0]
             current_turn = parts[1]
             raw_board = parts[2]
             draw_screen(last_move, current_turn, raw_board)
         elif len(parts) == 1 and len(msg.strip()) > 10:
-            # Fallback caso receba apenas o tabuleiro bruto sem cabeçalho
+            # fallback caso receba apenas o tabuleiro bruto sem cabeçalho
             draw_screen("Atualizado", "Aguardando...", msg)
 
     except Exception as e:

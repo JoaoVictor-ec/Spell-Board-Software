@@ -1,11 +1,12 @@
+#NÃO TA PRONTO AINDA, TO ESPERANDO AVANÇAR UM POUCO DO ARDUINO/PLOTTER PRA FAZER FICA MAIS PRA INTEGRAÇÃO DO MARCO 5/4
 import time
 import zmq
 import serial
 
-# Serial Port Configuration (Leave as None to simulate)
+# config de porta serial, acho que vou mudar isso depois pro esquema que fiz em comunicação de dados
 SERIAL_PORT = '/dev/ttyUSB0' 
 BAUD_RATE = 115200
-
+############################################################## a partir desse pornto as coiass que não são abobrinha são os sockets e os prints
 def uci_to_coordinates(uci_move):
     """
     Placeholder Function: Converts 'e2e4' to physical XY positions.
